@@ -31,5 +31,6 @@ Open [http://localhost:3000](http://localhost:3000).
 ## Notes
 
 - The interface is intentionally free to use, with no payment or subscription flow.
-- Magnet links are parsed and stored locally in the browser.
-- No backend torrent engine or storage worker is connected yet.
+- Torrent downloads run through a real WebTorrent backend in Node.js.
+- For deployed environments, set `TORRENT_DOWNLOAD_DIR` to a writable persistent directory when needed.
+- Serverless and ephemeral hosts are not ideal for long-running torrent downloads.

@@ -20,7 +20,7 @@ export async function POST(request) {
   } catch (error) {
     return NextResponse.json(
       { error: error.message || "Failed to add torrent." },
-      { status: 400 }
+      { status: error.statusCode || 500 }
     );
   }
 }

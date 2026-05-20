@@ -1,5 +1,6 @@
 import path from "node:path";
-import { mkdir } from "node:fs/promises";
+import os from "node:os";
+import { mkdir, unlink, writeFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import WebTorrent from "webtorrent";
 import {
@@ -14,10 +15,60 @@ import {
   pickPrimaryFile
 } from "@/utils/helpers";
 
-const DOWNLOAD_ROOT = path.join(process.cwd(), "downloads");
+const LOCAL_DOWNLOAD_ROOT = path.join(process.cwd(), "downloads");
+const TEMP_DOWNLOAD_ROOT = path.join(os.tmpdir(), "torrent-by-the-atom-downloads");
+const EPHEMERAL_HOST = Boolean(
+  process.env.VERCEL ||
+  process.env.NETLIFY ||
+  process.env.AWS_LAMBDA_FUNCTION_NAME ||
+  process.env.FUNCTIONS_WORKER_RUNTIME
+);
 
 function createId() {
   return randomUUID();
+}
+
+function createManagerError(message, statusCode = 500) {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  return error;
+}
+
+async function ensureWritableDirectory(directoryPath) {
+  await mkdir(directoryPath, { recursive: true });
+
+  const probeFile = path.join(directoryPath, `.write-test-${createId()}`);
+  await writeFile(probeFile, "ok");
+  await unlink(probeFile);
+}
+
+async function resolveDownloadRoot() {
+  const customRoot = process.env.TORRENT_DOWNLOAD_DIR;
+  const candidates = [
+    customRoot,
+    EPHEMERAL_HOST ? TEMP_DOWNLOAD_ROOT : LOCAL_DOWNLOAD_ROOT,
+    EPHEMERAL_HOST ? LOCAL_DOWNLOAD_ROOT : TEMP_DOWNLOAD_ROOT
+  ].filter(Boolean);
+
+  const failures = [];
+
+  for (const candidate of candidates) {
+    try {
+      await ensureWritableDirectory(candidate);
+
+      return {
+        path: candidate,
+        temporary: candidate === TEMP_DOWNLOAD_ROOT
+      };
+    } catch (error) {
+      failures.push(`${candidate}: ${error.code || error.message}`);
+    }
+  }
+
+  throw createManagerError(
+    `No writable download directory is available. Tried: ${failures.join(" | ")}`,
+    500
+  );
 }
 
 function deriveStatus(job) {
@@ -106,7 +157,8 @@ function serializeJob(job) {
     canStream: showDeviceActions ? primaryFile.kind === "video" || primaryFile.kind === "audio" : false,
     canPause: !paused,
     canResume: paused,
-    downloadPath: torrent?.path || DOWNLOAD_ROOT
+    downloadPath: torrent?.path || job.downloadPath || LOCAL_DOWNLOAD_ROOT,
+    temporaryStorage: Boolean(job.temporaryStorage)
   };
 }
 
@@ -114,11 +166,19 @@ class TorrentManager {
   constructor() {
     this.jobs = new Map();
     this.client = new WebTorrent();
-    this.ready = mkdir(DOWNLOAD_ROOT, { recursive: true });
+    this.downloadRoot = LOCAL_DOWNLOAD_ROOT;
+    this.temporaryStorage = false;
+    this.ready = this.prepareDownloadRoot();
 
     this.client.on("error", (error) => {
       console.error("WebTorrent client error", error);
     });
+  }
+
+  async prepareDownloadRoot() {
+    const resolved = await resolveDownloadRoot();
+    this.downloadRoot = resolved.path;
+    this.temporaryStorage = resolved.temporary;
   }
 
   list() {
@@ -140,13 +200,13 @@ class TorrentManager {
     await this.ready;
 
     if (!isValidMagnetLink(magnetLink)) {
-      throw new Error("The link must start with magnet:?xt=urn:btih:");
+      throw createManagerError("The link must start with magnet:?xt=urn:btih:", 400);
     }
 
     const parsed = parseMagnetLink(magnetLink);
 
     if (!parsed) {
-      throw new Error("That magnet link could not be parsed.");
+      throw createManagerError("That magnet link could not be parsed.", 400);
     }
 
     const duplicate = [...this.jobs.values()].find((job) => job.infoHash?.toLowerCase() === parsed.infoHash.toLowerCase());
@@ -165,6 +225,8 @@ class TorrentManager {
       infoHash: parsed.infoHash.toLowerCase(),
       sizeBytes: parsed.sizeBytes || 0,
       trackerCount: parsed.trackerCount || 0,
+      downloadPath: this.downloadRoot,
+      temporaryStorage: this.temporaryStorage,
       warning: null,
       error: null,
       torrent: null
@@ -173,7 +235,7 @@ class TorrentManager {
     this.jobs.set(job.id, job);
 
     const torrent = this.client.add(parsed.magnetLink, {
-      path: DOWNLOAD_ROOT,
+      path: this.downloadRoot,
       strategy: "sequential"
     });
 
