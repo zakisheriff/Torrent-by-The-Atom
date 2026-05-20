@@ -42,7 +42,7 @@ export default function DashboardPage() {
         </div>
 
         <p className={styles.helper}>
-          Downloads are stored on this machine in the project&apos;s <code>downloads</code> folder while the app is running.
+          Real torrent downloads need this app to stay running on a persistent Node server. Files are kept on the server for 24 hours, then removed automatically.
         </p>
       </GlassCard>
 

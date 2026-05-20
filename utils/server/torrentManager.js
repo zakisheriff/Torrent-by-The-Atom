@@ -1,6 +1,6 @@
 import path from "node:path";
 import os from "node:os";
-import { mkdir, unlink, writeFile } from "node:fs/promises";
+import { mkdir, readdir, rm, stat, unlink, writeFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import WebTorrent from "webtorrent";
 import {
@@ -17,12 +17,24 @@ import {
 
 const LOCAL_DOWNLOAD_ROOT = path.join(process.cwd(), "downloads");
 const TEMP_DOWNLOAD_ROOT = path.join(os.tmpdir(), "torrent-by-the-atom-downloads");
+const ONE_GB = 1024 ** 3;
+const CLEANUP_INTERVAL_MS = 60 * 60 * 1000;
 const EPHEMERAL_HOST = Boolean(
   process.env.VERCEL ||
   process.env.NETLIFY ||
   process.env.AWS_LAMBDA_FUNCTION_NAME ||
   process.env.FUNCTIONS_WORKER_RUNTIME
 );
+
+function readPositiveInt(value, fallback) {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+const RETENTION_MS = readPositiveInt(process.env.TORRENT_RETENTION_HOURS, 24) * 60 * 60 * 1000;
+const STORAGE_LIMIT_BYTES = readPositiveInt(process.env.TORRENT_STORAGE_LIMIT_GB, 150) * ONE_GB;
+const STORAGE_RESERVE_BYTES = readPositiveInt(process.env.TORRENT_STORAGE_RESERVE_GB, 15) * ONE_GB;
+const RETENTION_HOURS = Math.round(RETENTION_MS / (60 * 60 * 1000));
 
 function createId() {
   return randomUUID();
@@ -32,6 +44,36 @@ function createManagerError(message, statusCode = 500) {
   const error = new Error(message);
   error.statusCode = statusCode;
   return error;
+}
+
+function isExpiredTimestamp(value) {
+  if (!value) {
+    return false;
+  }
+
+  const time = new Date(value).getTime();
+  return Number.isFinite(time) && time <= Date.now();
+}
+
+async function getPathSize(targetPath) {
+  try {
+    const fileStat = await stat(targetPath);
+
+    if (!fileStat.isDirectory()) {
+      return fileStat.size;
+    }
+
+    const entries = await readdir(targetPath, { withFileTypes: true });
+    let total = 0;
+
+    for (const entry of entries) {
+      total += await getPathSize(path.join(targetPath, entry.name));
+    }
+
+    return total;
+  } catch {
+    return 0;
+  }
 }
 
 async function ensureWritableDirectory(directoryPath) {
@@ -158,7 +200,9 @@ function serializeJob(job) {
     canPause: !paused,
     canResume: paused,
     downloadPath: torrent?.path || job.downloadPath || LOCAL_DOWNLOAD_ROOT,
-    temporaryStorage: Boolean(job.temporaryStorage)
+    temporaryStorage: Boolean(job.temporaryStorage),
+    expiresAt: job.expiresAt || null,
+    retentionHours: RETENTION_HOURS
   };
 }
 
@@ -168,7 +212,12 @@ class TorrentManager {
     this.client = new WebTorrent();
     this.downloadRoot = LOCAL_DOWNLOAD_ROOT;
     this.temporaryStorage = false;
-    this.ready = this.prepareDownloadRoot();
+    this.cleanupTimer = null;
+    this.cleanupRunning = null;
+    this.ready = this.prepareDownloadRoot().then(async () => {
+      await this.cleanupExpiredArtifacts();
+      this.startCleanupLoop();
+    });
 
     this.client.on("error", (error) => {
       console.error("WebTorrent client error", error);
@@ -179,15 +228,106 @@ class TorrentManager {
     const resolved = await resolveDownloadRoot();
     this.downloadRoot = resolved.path;
     this.temporaryStorage = resolved.temporary;
+    await mkdir(this.downloadRoot, { recursive: true });
+  }
+
+  startCleanupLoop() {
+    if (this.cleanupTimer) {
+      return;
+    }
+
+    this.cleanupTimer = setInterval(() => {
+      this.cleanupExpiredArtifacts().catch((error) => {
+        console.error("Torrent cleanup failed", error);
+      });
+    }, CLEANUP_INTERVAL_MS);
+
+    if (typeof this.cleanupTimer.unref === "function") {
+      this.cleanupTimer.unref();
+    }
+  }
+
+  async cleanupExpiredArtifacts() {
+    if (this.cleanupRunning) {
+      return this.cleanupRunning;
+    }
+
+    this.cleanupRunning = (async () => {
+      for (const job of [...this.jobs.values()]) {
+        if (isExpiredTimestamp(job.expiresAt)) {
+          await this.remove(job.id);
+        }
+      }
+
+      const entries = await readdir(this.downloadRoot, { withFileTypes: true }).catch(() => []);
+
+      for (const entry of entries) {
+        if (!entry.isDirectory()) {
+          continue;
+        }
+
+        const targetPath = path.join(this.downloadRoot, entry.name);
+        const activeJob = [...this.jobs.values()].find((job) => job.downloadPath === targetPath);
+
+        if (activeJob) {
+          continue;
+        }
+
+        const entryStat = await stat(targetPath).catch(() => null);
+
+        if (!entryStat) {
+          continue;
+        }
+
+        const ageMs = Date.now() - entryStat.mtimeMs;
+
+        if (ageMs >= RETENTION_MS) {
+          await rm(targetPath, { recursive: true, force: true }).catch(() => null);
+        }
+      }
+    })();
+
+    try {
+      await this.cleanupRunning;
+    } finally {
+      this.cleanupRunning = null;
+    }
+  }
+
+  async getCurrentStorageUsage() {
+    return getPathSize(this.downloadRoot);
+  }
+
+  async ensureCapacityFor(sizeBytes = 0) {
+    const currentUsage = await this.getCurrentStorageUsage();
+    const usableLimit = Math.max(STORAGE_LIMIT_BYTES - STORAGE_RESERVE_BYTES, 0);
+
+    if (currentUsage >= usableLimit) {
+      throw createManagerError(
+        "Storage is full for this server. Older files need to expire before a new download can start.",
+        507
+      );
+    }
+
+    if (sizeBytes > 0 && currentUsage + sizeBytes > usableLimit) {
+      throw createManagerError(
+        `This file is too large for the current storage budget. The server keeps ${RETENTION_HOURS} hours of downloads and reserves free space to stay healthy.`,
+        507
+      );
+    }
   }
 
   list() {
+    void this.cleanupExpiredArtifacts().catch(() => null);
+
     return [...this.jobs.values()]
       .sort((first, second) => new Date(second.createdAt) - new Date(first.createdAt))
       .map((job) => serializeJob(job));
   }
 
   get(id) {
+    void this.cleanupExpiredArtifacts().catch(() => null);
+
     const job = this.jobs.get(id);
     return job ? serializeJob(job) : null;
   }
@@ -198,6 +338,7 @@ class TorrentManager {
 
   async addMagnet(magnetLink) {
     await this.ready;
+    await this.cleanupExpiredArtifacts();
 
     if (!isValidMagnetLink(magnetLink)) {
       throw createManagerError("The link must start with magnet:?xt=urn:btih:", 400);
@@ -209,15 +350,29 @@ class TorrentManager {
       throw createManagerError("That magnet link could not be parsed.", 400);
     }
 
+    if (EPHEMERAL_HOST) {
+      throw createManagerError(
+        "This deployment cannot keep a real torrent job alive. Run Torrent by The Atom on a persistent Node server or VPS with writable storage.",
+        503
+      );
+    }
+
     const duplicate = [...this.jobs.values()].find((job) => job.infoHash?.toLowerCase() === parsed.infoHash.toLowerCase());
 
     if (duplicate) {
       return serializeJob(duplicate);
     }
 
+    await this.ensureCapacityFor(parsed.sizeBytes || 0);
+
+    const jobId = createId();
+    const jobDownloadPath = path.join(this.downloadRoot, jobId);
+    await mkdir(jobDownloadPath, { recursive: true });
+
     const job = {
-      id: createId(),
+      id: jobId,
       createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + RETENTION_MS).toISOString(),
       completedAt: null,
       status: "connecting",
       magnetLink: parsed.magnetLink,
@@ -225,7 +380,7 @@ class TorrentManager {
       infoHash: parsed.infoHash.toLowerCase(),
       sizeBytes: parsed.sizeBytes || 0,
       trackerCount: parsed.trackerCount || 0,
-      downloadPath: this.downloadRoot,
+      downloadPath: jobDownloadPath,
       temporaryStorage: this.temporaryStorage,
       warning: null,
       error: null,
@@ -235,7 +390,7 @@ class TorrentManager {
     this.jobs.set(job.id, job);
 
     const torrent = this.client.add(parsed.magnetLink, {
-      path: this.downloadRoot,
+      path: jobDownloadPath,
       strategy: "sequential"
     });
 
@@ -305,6 +460,7 @@ class TorrentManager {
     }
 
     this.jobs.delete(id);
+    await rm(job.downloadPath, { recursive: true, force: true }).catch(() => null);
     return true;
   }
 

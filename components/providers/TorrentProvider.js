@@ -11,7 +11,9 @@ async function parseJson(response) {
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    throw new Error(data.error || "Request failed.");
+    const error = new Error(data.error || "Request failed.");
+    error.status = response.status;
+    throw error;
   }
 
   return data;
@@ -86,8 +88,16 @@ export function TorrentProvider({ children }) {
       return data.torrent;
     } catch (error) {
       showToast({
-        title: "Could not start download",
-        description: error.message || "The torrent could not be added.",
+        title: error.status === 503
+          ? "This host cannot run torrent downloads"
+          : error.status === 507
+            ? "Server storage is full"
+            : "Could not start download",
+        description: error.status === 503
+          ? error.message || "Run this app on a persistent Node server with writable storage."
+          : error.status === 507
+            ? error.message || "Older files need to expire before this download can start."
+            : error.message || "The torrent could not be added.",
         variant: "warning"
       });
       return false;

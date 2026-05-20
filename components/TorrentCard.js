@@ -73,7 +73,8 @@ export default function TorrentCard({ torrent, onDelete, onSetPaused }) {
           </button>
         </div>
 
-        {!torrent.done ? <p className={styles.notice}>The torrent is downloading here first. Save it to your device once it finishes.</p> : null}
+        {!torrent.done ? <p className={styles.notice}>The server is downloading this first. Save it to your device once it finishes.</p> : null}
+        {torrent.done ? <p className={styles.notice}>Completed files are kept for about {torrent.retentionHours} hours before automatic cleanup.</p> : null}
       </GlassCard>
     </div>
   );

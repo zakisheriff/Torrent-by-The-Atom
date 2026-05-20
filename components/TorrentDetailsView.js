@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ChevronDown, Copy, Download, Pause, Play, Sparkles } from "lucide-react";
+import { ChevronDown, Copy, Download, Pause, Play } from "lucide-react";
 import GlassCard from "@/components/GlassCard";
 import { useTorrents } from "@/components/providers/TorrentProvider";
 import { useToast } from "@/components/providers/ToastProvider";
@@ -24,16 +24,93 @@ function AccordionSection({ title, children, defaultOpen = false }) {
 }
 
 export default function TorrentDetailsView({ id }) {
-  const { getTorrentById, setTorrentPaused } = useTorrents();
+  const { getTorrentById, loading, setTorrentPaused } = useTorrents();
   const { showToast } = useToast();
-  const torrent = getTorrentById(id);
+  const [serverTorrent, setServerTorrent] = useState(null);
+  const [lookupState, setLookupState] = useState("idle");
+  const [lookupMessage, setLookupMessage] = useState("");
+  const cachedTorrent = getTorrentById(id);
+  const torrent = cachedTorrent || serverTorrent;
+
+  useEffect(() => {
+    if (cachedTorrent) {
+      setServerTorrent(null);
+      setLookupState("ready");
+      setLookupMessage("");
+      return;
+    }
+
+    if (loading) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadTorrent = async () => {
+      setLookupState("loading");
+      setLookupMessage("");
+
+      try {
+        const response = await fetch(`/api/torrents/${id}`, { cache: "no-store" });
+        const data = await response.json().catch(() => ({}));
+
+        if (cancelled) {
+          return;
+        }
+
+        if (response.ok && data.torrent) {
+          setServerTorrent(data.torrent);
+          setLookupState("ready");
+          return;
+        }
+
+        setServerTorrent(null);
+        setLookupState(response.status === 404 ? "missing" : "error");
+        setLookupMessage(data.error || "The download could not be loaded.");
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+
+        setServerTorrent(null);
+        setLookupState("error");
+        setLookupMessage(error.message || "The download could not be loaded.");
+      }
+    };
+
+    loadTorrent();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [cachedTorrent, id, loading]);
+
+  if (!torrent && (loading || lookupState === "idle" || lookupState === "loading")) {
+    return (
+      <div className={styles.missing}>
+        <GlassCard className={styles.missingCard}>
+          <div className={styles.missingBody}>
+            <p className={styles.missingEyebrow}>Loading</p>
+            <h1>Checking your download</h1>
+            <p>We&apos;re looking for this torrent in the current downloader session.</p>
+          </div>
+        </GlassCard>
+      </div>
+    );
+  }
 
   if (!torrent) {
     return (
       <div className={styles.missing}>
         <GlassCard className={styles.missingCard}>
-          <h1>Download not found</h1>
-          <p>The requested torrent is not available in the current session.</p>
+          <div className={styles.missingBody}>
+            <p className={styles.missingEyebrow}>Download not found</p>
+            <h1>This download is no longer active here</h1>
+            <p>{lookupMessage || "The requested torrent is not available in the current session."}</p>
+            <p className={styles.missingHint}>
+              On hosted deployments, real torrent jobs need a persistent Node server with writable storage. Serverless hosts lose the active download between requests.
+            </p>
+          </div>
           <Link href="/torrents">Back to library</Link>
         </GlassCard>
       </div>
@@ -96,7 +173,8 @@ export default function TorrentDetailsView({ id }) {
 
           {torrent.warning ? <p className={styles.notice}>{torrent.warning}</p> : null}
           {torrent.error ? <p className={`${styles.notice} ${styles.error}`}>{torrent.error}</p> : null}
-          {!torrent.done ? <p className={styles.notice}>This page is downloading the torrent first. The save-to-device button will appear after it finishes.</p> : null}
+          {!torrent.done ? <p className={styles.notice}>This server downloads the torrent first, then offers the final save-to-device step when it finishes.</p> : null}
+          {torrent.done ? <p className={styles.notice}>Completed files stay on the server for about {torrent.retentionHours} hours, then they are deleted automatically.</p> : null}
 
           <div className={styles.actions}>
             {!torrent.error ? (

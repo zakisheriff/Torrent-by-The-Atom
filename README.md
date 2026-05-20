@@ -177,6 +177,9 @@ Create a `.env.local` file if you want to control the download directory:
 
 ```env
 TORRENT_DOWNLOAD_DIR=/absolute/path/to/writable/downloads
+TORRENT_RETENTION_HOURS=24
+TORRENT_STORAGE_LIMIT_GB=150
+TORRENT_STORAGE_RESERVE_GB=15
 ```
 
 ### 4. Run the App
@@ -204,6 +207,8 @@ Visit **http://localhost:3000** or the port Next.js prints in your terminal.
 - **Do not rely on serverless hosting** for real torrent downloading
 - Platforms with ephemeral storage or sleeping processes are a bad fit for long-running torrent jobs
 - Set `TORRENT_DOWNLOAD_DIR` to a writable persistent directory in production
+- By default, completed files are automatically deleted after **24 hours**
+- The default storage budget is tuned for a small Oracle-style setup with a protected free-space reserve
 
 ---
 

@@ -195,13 +195,33 @@
   min-height: calc(100vh - 180px);
   display: grid;
   place-items: center;
+  padding: 24px;
 }
 
 .missingCard {
+  width: min(100%, 640px);
+  padding: 28px;
   text-align: center;
   display: grid;
-  gap: 16px;
-  max-width: 520px;
+  gap: 20px;
+}
+
+.missingBody {
+  display: grid;
+  gap: 12px;
+}
+
+.missingEyebrow {
+  margin: 0;
+  color: var(--accent);
+  font-size: 0.9rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.missingHint {
+  font-size: 0.98rem;
+  line-height: 1.75;
 }
 
 .missingCard h1,
@@ -211,6 +231,10 @@
 
 .missingCard p {
   color: var(--muted);
+}
+
+.missingCard a {
+  width: 100%;
 }
 
 @media (max-width: 960px) {
@@ -224,6 +248,15 @@
   .hero,
   .accordion {
     padding: 18px;
+  }
+
+  .missing {
+    min-height: calc(100vh - 140px);
+    padding: 18px;
+  }
+
+  .missingCard {
+    padding: 22px 18px;
   }
 
   /* Keep two columns on most mobile devices; only collapse to one
