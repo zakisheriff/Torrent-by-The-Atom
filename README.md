@@ -1,4 +1,4 @@
-# The Atom Torrent
+# Torrent by The Atom
 
 Frontend for `torrent.theatom.lk`, built with Next.js 15 App Router, CSS Modules, Framer Motion, and Lucide React.
 

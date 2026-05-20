@@ -18,7 +18,7 @@ export default function Sidebar({ mobileOpen, onClose, hideDesktop = false }) {
       <div className={styles.logoRow}>
         <Link href="/" className={styles.logo} onClick={onClose}>
           <div className={styles.logoCopy}>
-            <strong>Go Home</strong>
+            <strong>Torrent by The Atom</strong>
             <small>torrent.theatom.lk</small>
           </div>
         </Link>

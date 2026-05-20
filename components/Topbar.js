@@ -19,7 +19,7 @@ const titles = {
 export default function Topbar({ onMenuOpen }) {
   const pathname = usePathname();
   const current = titles[pathname] || {
-    title: "The Atom Torrent",
+    title: "Torrent by The Atom",
   };
 
   return (
