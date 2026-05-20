@@ -1,0 +1,236 @@
+.hero {
+  position: relative;
+  width: 100%;
+  max-width: 1480px;
+  min-height: 100svh;
+  margin: 0 auto;
+  padding: clamp(40px, 7vw, 84px) 20px;
+  display: grid;
+  place-items: center;
+  gap: 32px;
+}
+
+.glow {
+  position: absolute;
+  inset: -120px 20% auto;
+  height: 380px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(16, 163, 127, 0.12),
+    transparent 72%
+  );
+  filter: blur(56px);
+  pointer-events: none;
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 20px;
+  justify-items: center;
+  text-align: center;
+  max-width: 1120px;
+  margin: 0 auto;
+}
+
+.content h1 {
+  margin: 0;
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(3.4rem, 9vw, 7rem);
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+  max-width: 12ch;
+}
+
+.content p {
+  margin: 0;
+  max-width: 820px;
+  color: var(--muted);
+  font-size: clamp(1rem, 2.2vw, 1.2rem);
+  line-height: 1.75;
+}
+
+.inputCard {
+  width: min(980px, 100%);
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 35px;
+  background: linear-gradient(
+    180deg,
+    rgba(18, 18, 18, 0.96),
+    rgba(25, 25, 25, 0.86)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 26px 60px rgba(0, 0, 0, 0.28),
+    inset 0 1px 2px rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(16px);
+}
+
+.inputCard input {
+  flex: 1;
+  min-width: 0;
+  min-height: 64px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  padding: 0 10px;
+  outline: none;
+}
+
+.inputCard button {
+  position: relative;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  min-width: 260px;
+  min-height: 64px;
+  padding: 15px 24px;
+  border-radius: 35px;
+  border: 1px solid rgba(16, 163, 127, 0.18);
+  background: linear-gradient(180deg, #1be6b3 0%, #10a37f 50%, #0a7a63 100%);
+  color: #f3fffb;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  box-shadow:
+    0 22px 40px rgba(0, 0, 0, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    inset 0 -2px 12px rgba(0, 0, 0, 0.18);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    filter 0.2s ease;
+  overflow: hidden;
+}
+
+.inputCard button::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.28),
+    rgba(255, 255, 255, 0.04) 45%,
+    transparent 100%
+  );
+  pointer-events: none;
+  opacity: 0.85;
+  transform: translateY(-2px);
+}
+
+.inputCard button:hover {
+  transform: translateY(-1px) scale(1.01);
+  box-shadow:
+    0 26px 48px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -2px 14px rgba(0, 0, 0, 0.2);
+}
+
+.inputCard button:active {
+  transform: translateY(1px) scale(0.99);
+  box-shadow:
+    0 10px 18px rgba(0, 0, 0, 0.25),
+    inset 0 2px 8px rgba(0, 0, 0, 0.22);
+}
+
+.quickActions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.quickActions a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-radius: 35px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.statCard {
+  padding: 22px;
+  border-radius: 35px;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.statCard span {
+  display: block;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.statCard strong {
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  font-family: var(--font-display), sans-serif;
+}
+
+@media (max-width: 768px) {
+  .hero {
+    min-height: auto;
+    padding: 34px 0 24px;
+  }
+
+  .content {
+    gap: 18px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .content h1 {
+    font-size: clamp(2.7rem, 14vw, 4.4rem);
+    max-width: 9ch;
+  }
+
+  .content p {
+    font-size: 1rem;
+    line-height: 1.65;
+  }
+
+  .inputCard {
+    flex-direction: column;
+    width: 100%;
+    padding: 10px;
+  }
+
+  .inputCard input {
+    min-height: 56px;
+    padding: 0 12px;
+  }
+
+  .inputCard button {
+    width: 100%;
+    min-width: 0;
+    min-height: 58px;
+  }
+
+  .stats {
+    grid-template-columns: 1fr;
+  }
+
+  .quickActions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .quickActions a {
+    justify-content: center;
+    min-height: 56px;
+  }
+}

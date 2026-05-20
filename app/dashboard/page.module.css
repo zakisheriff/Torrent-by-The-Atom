@@ -1,0 +1,132 @@
+.page {
+  display: grid;
+  gap: 22px;
+}
+
+.hero,
+.queueSection {
+  padding: 24px;
+}
+
+.hero {
+  display: grid;
+  gap: 18px;
+}
+
+.heroCopy h1 {
+  margin: 14px 0 10px;
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(2rem, 4vw, 3.1rem);
+}
+
+.heroCopy p,
+.sectionHeader p,
+.helper {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.inputCard {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+}
+
+.inputWrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  padding: 0 20px;
+  border-radius: 35px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 18px 30px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(14px);
+}
+
+.inputWrap input {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  outline: none;
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.primaryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 64px;
+  padding: 0 24px;
+  border-radius: 35px;
+  border: 1px solid rgba(16, 163, 127, 0.22);
+  background: linear-gradient(135deg, #1be6b3, #10a37f 48%, #0a7a63);
+  color: var(--text);
+  box-shadow:
+    0 20px 38px rgba(0, 0, 0, 0.26),
+    inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    filter 0.2s ease;
+}
+
+.primaryButton:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 26px 42px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  filter: brightness(1.05);
+}
+
+.primaryButton:active {
+  transform: translateY(1px);
+  box-shadow:
+    0 10px 18px rgba(0, 0, 0, 0.24),
+    inset 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.helper {
+  max-width: 720px;
+}
+
+.queueSection,
+.torrentList {
+  display: grid;
+  gap: 16px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.sectionHeader h2 {
+  margin: 0 0 6px;
+}
+
+@media (max-width: 720px) {
+  .hero,
+  .queueSection {
+    padding: 20px;
+  }
+
+  .inputCard {
+    grid-template-columns: 1fr;
+  }
+
+  .primaryButton {
+    width: 100%;
+  }
+
+  .sectionHeader {
+    align-items: flex-start;
+  }
+}

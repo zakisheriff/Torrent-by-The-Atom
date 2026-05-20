@@ -1,0 +1,254 @@
+.page {
+  display: grid;
+  gap: 18px;
+}
+
+.hero {
+  padding: 24px;
+}
+
+.heroCopy {
+  display: grid;
+  gap: 18px;
+}
+
+.heroCopy h1 {
+  margin: 0;
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  line-height: 1.12;
+  word-break: break-word;
+}
+
+.heroCopy p,
+.metaCard span,
+.fileRow span,
+.fileLine span,
+.notice {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.heroMeta {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.metric,
+.metaCard {
+  border-radius: 35px;
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.metric span,
+.metaCard span {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.metric,
+.metaCard,
+.copyButton {
+  min-width: 0;
+}
+
+.metric strong,
+.metaCard strong {
+  display: block;
+  line-height: 1.45;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.progressTrack {
+  height: 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.progressTrack span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #10a37f, #62ffd6);
+  transition: width 0.35s ease;
+}
+
+.fileLine {
+  display: grid;
+  gap: 8px;
+}
+
+.fileLine strong {
+  font-size: 1rem;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.notice {
+  border-radius: 35px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.error {
+  color: #ffd7d7;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.actions a,
+.actions button,
+.copyButton,
+.missingCard a,
+.fileRow a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 52px;
+  padding: 0 18px;
+  border-radius: 35px;
+  border: 1px solid rgba(16, 163, 127, 0.24);
+  background: linear-gradient(135deg, #10a37f, #0f8b6d);
+  color: #f4fffb;
+}
+
+.secondary,
+.copyButton,
+.fileRow a {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  color: var(--text) !important;
+}
+
+.accordion {
+  padding: 18px;
+}
+
+.accordionTrigger {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.accordionContent {
+  padding-top: 16px;
+  display: grid;
+  gap: 14px;
+}
+
+.rotate {
+  transform: rotate(180deg);
+}
+
+.detailsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.fileList {
+  display: grid;
+  gap: 12px;
+}
+
+.fileRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  border-radius: 35px;
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.fileRow strong {
+  display: block;
+  margin-bottom: 8px;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.copyButton {
+  border: 0;
+  width: 100%;
+}
+
+.missing {
+  min-height: calc(100vh - 180px);
+  display: grid;
+  place-items: center;
+}
+
+.missingCard {
+  text-align: center;
+  display: grid;
+  gap: 16px;
+  max-width: 520px;
+}
+
+.missingCard h1,
+.missingCard p {
+  margin: 0;
+}
+
+.missingCard p {
+  color: var(--muted);
+}
+
+@media (max-width: 960px) {
+  .heroMeta,
+  .detailsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .hero,
+  .accordion {
+    padding: 18px;
+  }
+
+  /* Keep two columns on most mobile devices; only collapse to one
+     column on very small screens (<= 480px) to improve density. */
+  .heroMeta,
+  .detailsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .actions,
+  .fileRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .actions a,
+  .copyButton,
+  .fileRow a {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .heroMeta,
+  .detailsGrid {
+    grid-template-columns: 1fr;
+  }
+}

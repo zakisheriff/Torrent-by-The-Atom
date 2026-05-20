@@ -1,0 +1,32 @@
+.page,
+.list {
+  display: grid;
+  gap: 18px;
+}
+
+.hero {
+  padding: 24px;
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.hero h1 {
+  margin: 14px 0 10px;
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(2rem, 4vw, 3rem);
+}
+
+.hero p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.75;
+  max-width: 720px;
+}
+
+@media (max-width: 720px) {
+  .hero {
+    flex-direction: column;
+    padding: 18px;
+  }
+}

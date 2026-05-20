@@ -1,0 +1,56 @@
+.page {
+  padding: 72px 0 80px;
+  display: grid;
+  gap: 30px;
+}
+
+.hero {
+  display: grid;
+  gap: 14px;
+  max-width: 760px;
+}
+
+.hero h1 {
+  margin: 0;
+  font-family: var(--font-display), sans-serif;
+  font-size: clamp(2.8rem, 6vw, 4.8rem);
+  line-height: 0.98;
+}
+
+.hero p,
+.compare span {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.75;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.compare {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.compare div {
+  padding: 20px;
+  border-radius: 35px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.compare strong {
+  display: block;
+  margin-top: 8px;
+}
+
+@media (max-width: 1000px) {
+  .grid,
+  .compare {
+    grid-template-columns: 1fr;
+  }
+}

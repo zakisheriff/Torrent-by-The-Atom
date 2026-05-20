@@ -1,0 +1,175 @@
+.motionWrap {
+  transition: transform 0.2s ease;
+}
+
+.motionWrap:hover {
+  transform: translateY(-4px);
+}
+
+.card {
+  display: grid;
+  gap: 18px;
+  padding: 22px;
+}
+
+.top {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: flex-start;
+}
+
+.copy {
+  min-width: 0;
+}
+
+.nameRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.nameRow h3 {
+  margin: 0;
+  font-size: 1.08rem;
+  line-height: 1.4;
+}
+
+.copy p,
+.progressRow,
+.metaRow,
+.notice {
+  margin: 0;
+  color: var(--muted);
+}
+
+.status {
+  border-radius: 35px;
+  padding: 6px 10px;
+  font-size: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.connecting,
+.waiting {
+  color: #e8f5ff;
+  border-color: rgba(84, 187, 255, 0.26);
+  background: rgba(84, 187, 255, 0.12);
+}
+
+.paused {
+  color: #ffe9c2;
+  border-color: rgba(245, 158, 11, 0.28);
+  background: rgba(245, 158, 11, 0.12);
+}
+
+.downloading {
+  color: #d8fff5;
+  border-color: rgba(16, 163, 127, 0.28);
+  background: rgba(16, 163, 127, 0.12);
+}
+
+.completed {
+  color: #f1fffb;
+  border-color: rgba(16, 163, 127, 0.34);
+  background: rgba(16, 163, 127, 0.18);
+}
+
+.error {
+  color: #ffd7d7;
+}
+
+.view,
+.primary,
+.secondary,
+.danger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  border-radius: 35px;
+  padding: 0 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+}
+
+.view:hover,
+.primary:hover,
+.secondary:hover,
+.danger:hover {
+  transform: translateY(-2px);
+}
+
+.primary {
+  background: linear-gradient(135deg, #10a37f, #0f8b6d);
+  border-color: rgba(16, 163, 127, 0.22);
+}
+
+.secondary:hover,
+.view:hover {
+  border-color: rgba(16, 163, 127, 0.26);
+  background: rgba(16, 163, 127, 0.12);
+}
+
+.danger:hover {
+  border-color: rgba(239, 68, 68, 0.28);
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.progressBlock {
+  display: grid;
+  gap: 10px;
+}
+
+.progressRow,
+.metaRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.progressTrack {
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.progressTrack span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #10a37f, #62ffd6);
+  transition: width 0.35s ease;
+}
+
+.notice {
+  line-height: 1.6;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+  .top,
+  .actions {
+    flex-direction: column;
+  }
+
+  .view,
+  .primary,
+  .secondary,
+  .danger {
+    width: 100%;
+  }
+}

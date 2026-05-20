@@ -1,0 +1,28 @@
+.card {
+  padding: 34px 24px;
+  text-align: center;
+  display: grid;
+  gap: 14px;
+  place-items: center;
+}
+
+.icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 35px;
+  display: grid;
+  place-items: center;
+  background: rgba(16, 163, 127, 0.14);
+  color: #d7fff5;
+}
+
+.card h3 {
+  margin: 0;
+  font-family: var(--font-display), sans-serif;
+}
+
+.card p {
+  margin: 0;
+  color: var(--muted);
+  max-width: 460px;
+}

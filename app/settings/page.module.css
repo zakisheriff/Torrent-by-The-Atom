@@ -1,0 +1,80 @@
+.page,
+.sections {
+  display: grid;
+  gap: 18px;
+}
+
+.hero,
+.sectionCard {
+  padding: 24px;
+}
+
+.hero h1,
+.sectionHeader h2 {
+  margin: 14px 0 10px;
+  font-family: var(--font-display), sans-serif;
+}
+
+.hero p,
+.sectionHeader p,
+.placeholder span,
+.toggle span {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.sectionHeader {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.sectionIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 35px;
+  display: grid;
+  place-items: center;
+  background: rgba(16, 163, 127, 0.12);
+  color: #d8fff5;
+}
+
+.placeholder,
+.toggle {
+  margin-top: 18px;
+  width: 100%;
+  border-radius: 35px;
+  padding: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.placeholder strong,
+.toggle strong {
+  display: block;
+  margin-top: 8px;
+}
+
+.toggleGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.toggle {
+  text-align: left;
+  color: var(--text);
+}
+
+@media (max-width: 720px) {
+  .hero,
+  .sectionCard {
+    padding: 18px;
+  }
+
+  .toggleGrid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,51 @@
+.toast {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
+  align-items: start;
+  padding: 14px 16px;
+  border-radius: 35px;
+  background: rgba(14, 14, 14, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow:
+    0 26px 66px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(20px);
+}
+
+.iconWrap {
+  width: 36px;
+  height: 36px;
+  border-radius: 35px;
+  display: grid;
+  place-items: center;
+  background: rgba(16, 163, 127, 0.14);
+  color: #d5fff4;
+}
+
+.copy strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 0.95rem;
+}
+
+.copy p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.close {
+  width: 32px;
+  height: 32px;
+  border-radius: 35px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+}
+
+.close:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+}
