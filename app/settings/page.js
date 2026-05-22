@@ -18,13 +18,13 @@ const sections = [
   },
   {
     icon: SlidersHorizontal,
-    title: "Storage target",
-    description: "Choose where completed files should go once a real backend worker is attached."
+    title: "Device flow",
+    description: "Keep the handoff fast so the installed torrent app on this device does the actual transfer work."
   },
   {
     icon: KeySquare,
-    title: "Backend connection",
-    description: "Point the UI at a lawful server-side downloader when you are ready."
+    title: "App handoff",
+    description: "Use the browser as the clean launcher and magnet library instead of pretending to be the downloader itself."
   },
   {
     icon: Fingerprint,
@@ -43,7 +43,7 @@ export default function SettingsPage() {
         <div>
           <span className="eyebrow"><Shield size={14} /> Settings</span>
           <h1>Fine-tune how the workspace feels and behaves</h1>
-          <p>Built as a clean control surface with clear preferences, security modules, and storage tools.</p>
+          <p>Built as a simple control surface for handing magnets off to the torrent app on this device.</p>
         </div>
       </GlassCard>
 
@@ -75,7 +75,7 @@ export default function SettingsPage() {
               ) : (
                 <div className={styles.placeholder}>
                   <span>Not configured</span>
-                  <strong>This section is waiting for a real backend and storage configuration.</strong>
+                  <strong>This section is waiting for a future device-level or client integration.</strong>
                 </div>
               )}
             </GlassCard>

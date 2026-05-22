@@ -29,30 +29,43 @@
 
 .inputCard {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 12px;
+  padding: 8px;
+  border-radius: 35px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 18px 30px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(14px);
+  cursor: text;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+  align-items: center;
+}
+
+.inputCard:focus-within {
+  border-color: rgba(16, 163, 127, 0.4);
+  box-shadow:
+    0 18px 30px rgba(0, 0, 0, 0.22),
+    0 0 0 3px rgba(16, 163, 127, 0.15);
 }
 
 .inputWrap {
   display: flex;
   align-items: center;
   gap: 12px;
-  min-height: 64px;
-  padding: 0 20px;
-  border-radius: 35px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 18px 30px rgba(0, 0, 0, 0.18);
-  backdrop-filter: blur(14px);
+  min-width: 0;
+  padding: 0 16px;
 }
 
 .inputWrap input {
   width: 100%;
-  background: transparent;
-  border: 0;
-  outline: none;
+  background: transparent !important;
+  border: 0 !important;
+  outline: none !important;
   color: var(--text);
   font-size: 1rem;
+  box-shadow: none !important;
+  border-radius: 0 !important;
 }
 
 .primaryButton {
@@ -60,7 +73,7 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  min-height: 64px;
+  min-height: 48px;
   padding: 0 24px;
   border-radius: 35px;
   border: 1px solid rgba(16, 163, 127, 0.22);
@@ -120,10 +133,17 @@
 
   .inputCard {
     grid-template-columns: 1fr;
+    padding: 10px;
+  }
+
+  .inputWrap {
+    min-height: 48px;
+    padding: 0 8px;
   }
 
   .primaryButton {
     width: 100%;
+    min-height: 48px;
   }
 
   .sectionHeader {

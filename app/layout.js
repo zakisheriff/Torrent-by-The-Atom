@@ -6,7 +6,7 @@ import { TorrentProvider } from "@/components/providers/TorrentProvider";
 
 const siteUrl = "https://torrent.theatom.lk";
 const siteTitle = "Torrent by The Atom";
-const siteDescription = "Free self-hosted torrent downloader for torrent.theatom.lk. Paste a magnet link, track progress, and save completed files.";
+const siteDescription = "Paste a magnet link, open it on your device, and keep a clean local library of torrent links in your browser.";
 
 export const metadata = {
   metadataBase: new URL(siteUrl),
@@ -18,11 +18,11 @@ export const metadata = {
   description: siteDescription,
   keywords: [
     "Torrent by The Atom",
-    "torrent downloader",
-    "magnet link downloader",
-    "self-hosted torrent client",
+    "torrent launcher",
+    "magnet link opener",
+    "device torrent handoff",
     "torrent.theatom.lk",
-    "web torrent downloader"
+    "browser magnet library"
   ],
   authors: [{ name: "The Atom" }],
   creator: "The Atom",

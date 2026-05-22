@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { ChevronDown, Copy, Download, Pause, Play } from "lucide-react";
+import { ChevronDown, Copy, ExternalLink, Trash2 } from "lucide-react";
 import GlassCard from "@/components/GlassCard";
 import { useTorrents } from "@/components/providers/TorrentProvider";
 import { useToast } from "@/components/providers/ToastProvider";
-import { shortHash } from "@/utils/helpers";
+import { formatDateTime, shortHash } from "@/utils/helpers";
 import styles from "@/components/TorrentDetailsView.module.css";
 
 function AccordionSection({ title, children, defaultOpen = false }) {
@@ -24,75 +24,18 @@ function AccordionSection({ title, children, defaultOpen = false }) {
 }
 
 export default function TorrentDetailsView({ id }) {
-  const { getTorrentById, loading, setTorrentPaused } = useTorrents();
+  const { getTorrentById, loading, openTorrent, deleteTorrent } = useTorrents();
   const { showToast } = useToast();
-  const [serverTorrent, setServerTorrent] = useState(null);
-  const [lookupState, setLookupState] = useState("idle");
-  const [lookupMessage, setLookupMessage] = useState("");
-  const cachedTorrent = getTorrentById(id);
-  const torrent = cachedTorrent || serverTorrent;
+  const torrent = getTorrentById(id);
 
-  useEffect(() => {
-    if (cachedTorrent) {
-      setServerTorrent(null);
-      setLookupState("ready");
-      setLookupMessage("");
-      return;
-    }
-
-    if (loading) {
-      return;
-    }
-
-    let cancelled = false;
-
-    const loadTorrent = async () => {
-      setLookupState("loading");
-      setLookupMessage("");
-
-      try {
-        const response = await fetch(`/api/torrents/${id}`, { cache: "no-store" });
-        const data = await response.json().catch(() => ({}));
-
-        if (cancelled) {
-          return;
-        }
-
-        if (response.ok && data.torrent) {
-          setServerTorrent(data.torrent);
-          setLookupState("ready");
-          return;
-        }
-
-        setServerTorrent(null);
-        setLookupState(response.status === 404 ? "missing" : "error");
-        setLookupMessage(data.error || "The download could not be loaded.");
-      } catch (error) {
-        if (cancelled) {
-          return;
-        }
-
-        setServerTorrent(null);
-        setLookupState("error");
-        setLookupMessage(error.message || "The download could not be loaded.");
-      }
-    };
-
-    loadTorrent();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [cachedTorrent, id, loading]);
-
-  if (!torrent && (loading || lookupState === "idle" || lookupState === "loading")) {
+  if (!torrent && loading) {
     return (
       <div className={styles.missing}>
         <GlassCard className={styles.missingCard}>
           <div className={styles.missingBody}>
             <p className={styles.missingEyebrow}>Loading</p>
-            <h1>Checking your download</h1>
-            <p>We&apos;re looking for this torrent in the current downloader session.</p>
+            <h1>Checking your magnet</h1>
+            <p>We&apos;re looking for this magnet in the current browser session.</p>
           </div>
         </GlassCard>
       </div>
@@ -104,11 +47,11 @@ export default function TorrentDetailsView({ id }) {
       <div className={styles.missing}>
         <GlassCard className={styles.missingCard}>
           <div className={styles.missingBody}>
-            <p className={styles.missingEyebrow}>Download not found</p>
-            <h1>This download is no longer active here</h1>
-            <p>{lookupMessage || "The requested torrent is not available in the current session."}</p>
+            <p className={styles.missingEyebrow}>Magnet not found</p>
+            <h1>This link is not saved in this browser</h1>
+            <p>The requested magnet is no longer available in the current local library.</p>
             <p className={styles.missingHint}>
-              On hosted deployments, real torrent jobs need a persistent Node server with writable storage. Serverless hosts lose the active download between requests.
+              Add the magnet again on the dashboard and we&apos;ll reopen it on this device.
             </p>
           </div>
           <Link href="/torrents">Back to library</Link>
@@ -139,67 +82,44 @@ export default function TorrentDetailsView({ id }) {
       <GlassCard className={styles.hero}>
         <div className={styles.heroCopy}>
           <h1>{torrent.name}</h1>
-          <p>{torrent.statusLabel} • {torrent.progressPercent}% complete</p>
+          <p>{torrent.statusLabel} • Added {formatDateTime(torrent.createdAt)}</p>
 
           <div className={styles.heroMeta}>
-            <div className={styles.metric}>
-              <span>Speed</span>
-              <strong>{torrent.downloadSpeedLabel}</strong>
-            </div>
             <div className={styles.metric}>
               <span>Size</span>
               <strong>{torrent.sizeLabel}</strong>
             </div>
             <div className={styles.metric}>
-              <span>Time left</span>
-              <strong>{torrent.timeRemainingLabel}</strong>
+              <span>Trackers</span>
+              <strong>{torrent.trackerCount}</strong>
             </div>
             <div className={styles.metric}>
-              <span>Peers</span>
-              <strong>{torrent.peers}</strong>
+              <span>Info hash</span>
+              <strong>{shortHash(torrent.infoHash)}</strong>
+            </div>
+            <div className={styles.metric}>
+              <span>Last opened</span>
+              <strong>{torrent.lastOpenedAt ? formatDateTime(torrent.lastOpenedAt) : "Not yet"}</strong>
             </div>
           </div>
 
-          <div className={styles.progressTrack}>
-            <span style={{ width: `${torrent.progressPercent}%` }} />
+          <div className={styles.fileLine}>
+            <span>How this works</span>
+            <strong>We hand the magnet to your installed torrent app, and your device handles the actual download.</strong>
           </div>
 
-          {torrent.primaryFile ? (
-            <div className={styles.fileLine}>
-              <span>File</span>
-              <strong>{torrent.primaryFile.name}</strong>
-            </div>
-          ) : null}
-
-          {torrent.warning ? <p className={styles.notice}>{torrent.warning}</p> : null}
-          {torrent.error ? <p className={`${styles.notice} ${styles.error}`}>{torrent.error}</p> : null}
-          {!torrent.done ? <p className={styles.notice}>This server downloads the torrent first, then offers the final save-to-device step when it finishes.</p> : null}
-          {torrent.done ? <p className={styles.notice}>Completed files stay on the server for about {torrent.retentionHours} hours, then they are deleted automatically.</p> : null}
+          <p className={styles.notice}>If nothing opens, make sure a torrent app is installed on this phone or laptop, then tap the open button again.</p>
 
           <div className={styles.actions}>
-            {!torrent.error ? (
-              <button
-                onClick={() => setTorrentPaused(torrent.id, !torrent.paused)}
-                className={styles.secondary}
-              >
-                {torrent.paused ? <Play size={16} /> : <Pause size={16} />}
-                {torrent.paused ? "Resume" : "Pause"}
-              </button>
-            ) : null}
+            <button onClick={() => openTorrent(torrent.id)}>
+              <ExternalLink size={16} />
+              Open in torrent app
+            </button>
 
-            {torrent.canStream && torrent.primaryFile ? (
-              <a href={torrent.primaryFile.streamHref} target="_blank" rel="noreferrer">
-                <Play size={16} />
-                Open video
-              </a>
-            ) : null}
-
-            {torrent.canDownload && torrent.primaryFile ? (
-              <a href={torrent.primaryFile.downloadHref} className={styles.secondary} download>
-                <Download size={16} />
-                Save to device
-              </a>
-            ) : null}
+            <Link href="/torrents" onClick={() => deleteTorrent(torrent.id)} className={styles.secondary}>
+              <Trash2 size={16} />
+              Delete from library
+            </Link>
           </div>
         </div>
       </GlassCard>
@@ -211,32 +131,18 @@ export default function TorrentDetailsView({ id }) {
             <strong>{shortHash(torrent.infoHash)}</strong>
           </div>
           <div className={styles.metaCard}>
-            <span>Downloaded</span>
-            <strong>{torrent.downloadedLabel}</strong>
+            <span>Trackers</span>
+            <strong>{torrent.trackerCount}</strong>
           </div>
           <div className={styles.metaCard}>
-            <span>Saved to</span>
-            <strong>{torrent.downloadPath}</strong>
+            <span>Primary host</span>
+            <strong>{torrent.trackerHosts[0] || "Unknown"}</strong>
           </div>
           <button onClick={copyMagnet} className={styles.copyButton}>
             <Copy size={16} />
             Copy magnet link
           </button>
         </div>
-
-        {torrent.files.length ? (
-          <div className={styles.fileList}>
-            {torrent.files.map((file) => (
-              <div key={`${file.index}-${file.name}`} className={styles.fileRow}>
-                <div>
-                  <strong>{file.name}</strong>
-                  <span>{file.sizeLabel} • {file.progressPercent}%</span>
-                </div>
-                {torrent.done ? <a href={file.downloadHref} download>Save</a> : null}
-              </div>
-            ))}
-          </div>
-        ) : null}
       </AccordionSection>
     </div>
   );

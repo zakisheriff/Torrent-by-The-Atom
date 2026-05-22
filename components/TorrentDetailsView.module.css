@@ -121,6 +121,36 @@
   border: 1px solid rgba(16, 163, 127, 0.24);
   background: linear-gradient(135deg, #10a37f, #0f8b6d);
   color: #f4fffb;
+  transform: translateY(0);
+  box-shadow:
+    0 3px 0 #085441,
+    0 8px 16px rgba(16, 163, 127, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition:
+    transform 0.12s cubic-bezier(0.3, 0.8, 0.4, 1),
+    box-shadow 0.12s cubic-bezier(0.3, 0.8, 0.4, 1),
+    background 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.actions a:hover,
+.actions button:hover,
+.missingCard a:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 5px 0 #085441,
+    0 12px 24px rgba(16, 163, 127, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.actions a:active,
+.actions button:active,
+.missingCard a:active {
+  transform: translateY(2px);
+  box-shadow:
+    0 1px 0 #085441,
+    0 4px 8px rgba(16, 163, 127, 0.05),
+    inset 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .secondary,
@@ -129,6 +159,30 @@
   background: rgba(255, 255, 255, 0.04) !important;
   border-color: rgba(255, 255, 255, 0.08) !important;
   color: var(--text) !important;
+  box-shadow:
+    0 3px 0 #050506,
+    0 8px 16px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+}
+
+.secondary:hover,
+.copyButton:hover,
+.fileRow a:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 5px 0 #050506,
+    0 12px 24px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+
+.secondary:active,
+.copyButton:active,
+.fileRow a:active {
+  transform: translateY(2px);
+  box-shadow:
+    0 1px 0 #050506,
+    0 4px 8px rgba(0, 0, 0, 0.12),
+    inset 0 2px 4px rgba(0, 0, 0, 0.2) !important;
 }
 
 .accordion {

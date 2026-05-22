@@ -1,22 +1,52 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { formatBytes, isValidMagnetLink } from "@/utils/helpers";
+import { formatBytes, isValidMagnetLink, parseMagnetLink } from "@/utils/helpers";
 import { useToast } from "@/components/providers/ToastProvider";
 
 const TorrentContext = createContext(null);
-const POLL_INTERVAL = 2500;
+const STORAGE_KEY = "torrent-by-the-atom.magnets";
 
-async function parseJson(response) {
-  const data = await response.json().catch(() => ({}));
+function getStatusLabel(status) {
+  const labels = {
+    ready: "Ready",
+    opened: "Sent to app"
+  };
 
-  if (!response.ok) {
-    const error = new Error(data.error || "Request failed.");
-    error.status = response.status;
-    throw error;
+  return labels[status] || "Ready";
+}
+
+function buildTorrentRecord(magnetLink) {
+  const parsed = parseMagnetLink(magnetLink);
+
+  if (!parsed) {
+    return null;
   }
 
-  return data;
+  return {
+    id: crypto.randomUUID(),
+    magnetLink: parsed.magnetLink,
+    name: parsed.name,
+    infoHash: parsed.infoHash,
+    sizeBytes: parsed.sizeBytes,
+    sizeLabel: parsed.sizeLabel,
+    trackers: parsed.trackers,
+    trackerHosts: parsed.trackerHosts,
+    trackerCount: parsed.trackerCount,
+    createdAt: new Date().toISOString(),
+    lastOpenedAt: null,
+    status: "ready",
+    statusLabel: getStatusLabel("ready")
+  };
+}
+
+function launchMagnet(magnetLink) {
+  const anchor = document.createElement("a");
+  anchor.href = magnetLink;
+  anchor.style.display = "none";
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
 }
 
 export function TorrentProvider({ children }) {
@@ -24,32 +54,31 @@ export function TorrentProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const { showToast } = useToast();
 
-  const refreshTorrents = async ({ silent = false } = {}) => {
+  useEffect(() => {
     try {
-      const data = await parseJson(await fetch("/api/torrents", { cache: "no-store" }));
-      setTorrents(data.torrents || []);
-    } catch (error) {
-      if (!silent) {
-        showToast({
-          title: "Could not refresh downloads",
-          description: error.message || "The torrent list could not be loaded.",
-          variant: "warning"
-        });
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+
+      if (!raw) {
+        setTorrents([]);
+        return;
       }
+
+      const parsed = JSON.parse(raw);
+      setTorrents(Array.isArray(parsed) ? parsed : []);
+    } catch {
+      setTorrents([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    refreshTorrents();
+    if (loading) {
+      return;
+    }
 
-    const interval = window.setInterval(() => {
-      refreshTorrents({ silent: true });
-    }, POLL_INTERVAL);
-
-    return () => window.clearInterval(interval);
-  }, []);
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(torrents));
+  }, [loading, torrents]);
 
   const addTorrent = async (magnetLink) => {
     if (!magnetLink.trim()) {
@@ -70,101 +99,97 @@ export function TorrentProvider({ children }) {
       return false;
     }
 
-    try {
-      const data = await parseJson(await fetch("/api/torrents", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ magnetLink })
-      }));
+    const existing = torrents.find((torrent) => torrent.magnetLink === magnetLink.trim());
 
-      await refreshTorrents({ silent: true });
+    if (existing) {
+      launchMagnet(existing.magnetLink);
       showToast({
-        title: "Download started",
-        description: `${data.torrent.name} has been added to the downloader.`,
+        title: "Opening torrent app",
+        description: "This magnet was already in your library, so we reopened it on your device.",
         variant: "success"
       });
-      return data.torrent;
-    } catch (error) {
+      return existing;
+    }
+
+    const record = buildTorrentRecord(magnetLink);
+
+    if (!record) {
       showToast({
-        title: error.status === 503
-          ? "This host cannot run torrent downloads"
-          : error.status === 507
-            ? "Server storage is full"
-            : "Could not start download",
-        description: error.status === 503
-          ? error.message || "Run this app on a persistent Node server with writable storage."
-          : error.status === 507
-            ? error.message || "Older files need to expire before this download can start."
-            : error.message || "The torrent could not be added.",
+        title: "Could not read magnet",
+        description: "The magnet link could not be parsed correctly.",
         variant: "warning"
       });
       return false;
     }
+
+    const openedRecord = {
+      ...record,
+      status: "opened",
+      statusLabel: getStatusLabel("opened"),
+      lastOpenedAt: new Date().toISOString()
+    };
+
+    setTorrents((current) => [openedRecord, ...current]);
+    launchMagnet(openedRecord.magnetLink);
+
+    showToast({
+      title: "Opening torrent app",
+      description: `${openedRecord.name} was handed off to your device.`,
+      variant: "success"
+    });
+
+    return openedRecord;
   };
 
   const deleteTorrent = async (id) => {
-    try {
-      await parseJson(await fetch(`/api/torrents/${id}`, {
-        method: "DELETE"
-      }));
-      setTorrents((current) => current.filter((torrent) => torrent.id !== id));
+    setTorrents((current) => current.filter((torrent) => torrent.id !== id));
+    showToast({
+      title: "Removed from library",
+      description: "The magnet link was removed from this browser."
+    });
+  };
+
+  const openTorrent = async (id) => {
+    const torrent = torrents.find((item) => item.id === id);
+
+    if (!torrent) {
       showToast({
-        title: "Download removed",
-        description: "The torrent and its downloaded files were removed."
-      });
-    } catch (error) {
-      showToast({
-        title: "Could not remove download",
-        description: error.message || "The torrent could not be removed.",
+        title: "Link not found",
+        description: "This magnet is no longer in the current browser library.",
         variant: "warning"
       });
+      return false;
     }
+
+    launchMagnet(torrent.magnetLink);
+    setTorrents((current) => current.map((item) => (
+      item.id === id
+        ? {
+            ...item,
+            status: "opened",
+            statusLabel: getStatusLabel("opened"),
+            lastOpenedAt: new Date().toISOString()
+          }
+        : item
+    )));
+
+    showToast({
+      title: "Opening torrent app",
+      description: "If a torrent app is installed, your device should handle the magnet now.",
+      variant: "success"
+    });
+
+    return true;
   };
 
-  const setTorrentPaused = async (id, paused) => {
-    try {
-      const data = await parseJson(await fetch(`/api/torrents/${id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ action: paused ? "pause" : "resume" })
-      }));
-
-      setTorrents((current) => current.map((torrent) => (
-        torrent.id === id ? data.torrent : torrent
-      )));
-
-      showToast({
-        title: paused ? "Download paused" : "Download resumed",
-        description: paused
-          ? "The torrent is paused, including background transfer activity."
-          : "The torrent has resumed downloading and seeding."
-      });
-    } catch (error) {
-      showToast({
-        title: paused ? "Could not pause" : "Could not resume",
-        description: error.message || "The torrent state could not be changed.",
-        variant: "warning"
-      });
-    }
-  };
-
-  const getTorrentById = (id) => {
-    return torrents.find((item) => item.id === id) || null;
-  };
+  const getTorrentById = (id) => torrents.find((item) => item.id === id) || null;
 
   const stats = useMemo(() => {
     const totalKnownBytes = torrents.reduce((sum, torrent) => sum + (torrent.sizeBytes || 0), 0);
-    const activeCount = torrents.filter((torrent) => torrent.status === "downloading" || torrent.status === "connecting" || torrent.status === "waiting").length;
-    const completedCount = torrents.filter((torrent) => torrent.status === "completed").length;
 
     return {
       queueCount: torrents.length,
-      activeCount,
-      completedCount,
+      totalKnownBytes,
       knownSizeLabel: formatBytes(totalKnownBytes)
     };
   }, [torrents]);
@@ -173,10 +198,9 @@ export function TorrentProvider({ children }) {
     torrents,
     loading,
     stats,
-    refreshTorrents,
     addTorrent,
     deleteTorrent,
-    setTorrentPaused,
+    openTorrent,
     getTorrentById
   }), [torrents, loading, stats]);
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { ArrowRight, Link2 } from "lucide-react";
 import EmptyState from "@/components/EmptyState";
 import GlassCard from "@/components/GlassCard";
@@ -10,11 +10,19 @@ import styles from "@/app/dashboard/page.module.css";
 
 export default function DashboardPage() {
   const [magnet, setMagnet] = useState("");
-  const { torrents, loading, addTorrent, deleteTorrent, setTorrentPaused } = useTorrents();
+  const { torrents, loading, addTorrent, deleteTorrent, openTorrent } = useTorrents();
+  const inputRef = useRef(null);
 
   const handleSubmit = async () => {
+    if (!magnet.trim()) return;
     if (await addTorrent(magnet)) {
       setMagnet("");
+    }
+  };
+
+  const handleContainerClick = (e) => {
+    if (e.target.tagName !== "BUTTON" && !e.target.closest("button")) {
+      inputRef.current?.focus();
     }
   };
 
@@ -23,26 +31,27 @@ export default function DashboardPage() {
       <GlassCard className={styles.hero}>
         <div className={styles.heroCopy}>
           <h1>Paste a magnet link</h1>
-          <p>Start the torrent, watch the progress, and open the file when it is ready.</p>
+          <p>Send it straight to the torrent app on this device and let the download happen there.</p>
         </div>
 
-        <div className={styles.inputCard}>
+        <div className={styles.inputCard} onClick={handleContainerClick}>
           <div className={styles.inputWrap}>
             <Link2 size={18} />
             <input
+              ref={inputRef}
               value={magnet}
               onChange={(event) => setMagnet(event.target.value)}
               placeholder="magnet:?xt=urn:btih:..."
             />
           </div>
           <button className={styles.primaryButton} onClick={handleSubmit}>
-            <span>Start download</span>
+            <span>Open on device</span>
             <ArrowRight size={18} />
           </button>
         </div>
 
         <p className={styles.helper}>
-          Real torrent downloads need this app to stay running on a persistent Node server. Files are kept on the server for 24 hours, then removed automatically.
+          This site keeps a clean local library of your magnets in this browser and hands each link off to your installed torrent app.
         </p>
       </GlassCard>
 
@@ -61,13 +70,13 @@ export default function DashboardPage() {
                 key={torrent.id}
                 torrent={torrent}
                 onDelete={deleteTorrent}
-                onSetPaused={setTorrentPaused}
+                onOpen={openTorrent}
               />
             ))
           ) : (
             <EmptyState
               title="Paste your first magnet link"
-              description="Once you add one, it will appear here in a clean list."
+              description="Once you add one, it will appear here so you can reopen it on this device anytime."
             />
           )}
         </div>
