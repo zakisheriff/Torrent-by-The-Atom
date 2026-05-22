@@ -195,6 +195,15 @@ We implemented several key optimizations that transformed the site from a basic 
     3.  **Double Polling Rates**: Shifted polling frequencies from `800ms` down to `350ms` for immediate UI response.
     4.  **Contextual Audio Labels**: Implemented checking to show `"Extracting audio..."` instead of `"Merging formats..."` when processing MP3s.
 
+### Challenge 8: Resource Exhaustion, OOM, and DoS Risks (Free-Tier Architecture)
+*   **The Problem**: Running concurrent downloads and FFmpeg merging processes on a free Hugging Face container exposes it to Out-Of-Memory (OOM) crashes, Node.js event-loop blocking, and DoS abuse. Ephemeral file storage could fill up the disk, and buffering files in memory during HTTP stream delivery could crash the Node process.
+*   **The Conquering Path**:
+    1.  **Centralized Job Queue & State Manager (`lib/JobQueue.js`)**: Configured a concurrency queue capping background downloads/merges to a maximum of `3` at any time. Excess requests are queued, and the `/api/media/status` endpoint returns the user's position in line. State survives Next.js dev reloads via `global.__activeDownloads`.
+    2.  **In-Memory Rate Limiter (`lib/RateLimiter.js`)**: Enforced a sliding-window limit restricting each client (resolved via proxy headers `x-forwarded-for`/`x-real-ip` or URL fallbacks) to a maximum of `5` downloads per hour.
+    3.  **Flat-Memory Web Stream Delivery**: Removed file-to-buffer memory loading. Files are piped directly using Node's native `stream.Readable.toWeb` combined with standard Web Response streams. This respects stream backpressure, keeping memory flat during active transfers.
+    4.  **Continuous Garbage Collection**: Built a background worker inside the `JobQueue` module running every 10 minutes to scan and delete temp folders/files and prune in-memory rate-limiter maps/job states older than 30 minutes.
+    5.  **Hard Duration Block**: Implemented checking in both the inspect and download routes that rejects any media exceeding 30 minutes (1,800 seconds) with a `400 Bad Request`.
+
 ---
 
 ## ✅ How it Works Perfectly Now
@@ -202,8 +211,9 @@ We implemented several key optimizations that transformed the site from a basic 
 1.  **Instant Direct Downloads**: Clicking progressive MP4 video or direct audio formats opens the stream immediately, initiating browser downloads in under 300ms.
 2.  **Smooth, Adaptive Progress Interface**: Clicking merged qualities displays a progress bar that scales correctly through video downloading, audio downloading, and merging without resets.
 3.  **Zero-Latency High-Quality Merges**: High-quality formats (1080p, 1440p, 4K) are merged in under 2 seconds using FFmpeg stream copying, and download success toast notifications are displayed when the browser download starts.
-4.  **Automatic Memory & Disk Cleanups**: Temporary directories are deleted immediately on a successful download, and delayed by 60 seconds on aborted downloads to accommodate browser Range requests. Empty directories are purged to keep the disk clean.
-5.  **Robust Bot-Bypass**: Sanitized cookies and prioritized player client configurations allow the space backend to run uninterrupted without throwing Google/Instagram challenge blocks, inspecting links under 3 seconds.
+4.  **Abuse & Concurrency Protection**: The backend queue caps concurrent active merges at 3, queueing subsequent tasks and displaying queue position feedback to users. The rate limiter strictly caps client downloads to 5 per hour.
+5.  **Automatic Memory & Disk Cleanups**: Temporary directories are deleted immediately on a successful download, and delayed by 60 seconds on aborted downloads to accommodate browser Range requests. A global cleanup worker executes every 10 minutes to purge any stale files or states older than 30 minutes.
+6.  **Robust Bot-Bypass**: Sanitized cookies and prioritized player client configurations allow the space backend to run uninterrupted without throwing Google/Instagram challenge blocks, inspecting links under 3 seconds.
 
 ---
 
