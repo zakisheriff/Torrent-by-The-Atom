@@ -101,6 +101,7 @@ Torrent by The Atom reduces the experience to the few things users actually care
 ✅ **Save to Device** — Browser download only after the torrent finishes  
 ✅ **SEO Ready** — Metadata, Open Graph, Twitter cards, robots, sitemap, and manifest configured  
 ✅ **Custom Branding** — Uses `Logo.png` for favicon, app icon, and Apple icon  
+✅ **Vercel Analytics** — Production traffic and page view tracking integrated  
 
 ---
 

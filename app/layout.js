@@ -3,6 +3,7 @@ import RouteShell from "@/components/RouteShell";
 import SmoothScrollProvider from "@/components/SmoothScrollProvider";
 import { ToastProvider } from "@/components/providers/ToastProvider";
 import { TorrentProvider } from "@/components/providers/TorrentProvider";
+import { Analytics } from "@vercel/analytics/next";
 
 const siteUrl = "https://torrent.theatom.lk";
 const siteTitle = "Torrent by The Atom";
@@ -94,6 +95,7 @@ export default function RootLayout({ children }) {
             </SmoothScrollProvider>
           </TorrentProvider>
         </ToastProvider>
+        <Analytics />
       </body>
     </html>
   );

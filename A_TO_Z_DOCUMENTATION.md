@@ -215,6 +215,12 @@ We implemented several key optimizations that transformed the site from a basic 
 5.  **Automatic Memory & Disk Cleanups**: Temporary directories are deleted immediately on a successful download, and delayed by 60 seconds on aborted downloads to accommodate browser Range requests. A global cleanup worker executes every 10 minutes to purge any stale files or states older than 30 minutes.
 6.  **Robust Bot-Bypass**: Sanitized cookies and prioritized player client configurations allow the space backend to run uninterrupted without throwing Google/Instagram challenge blocks, inspecting links under 3 seconds.
 
+## 📈 Vercel Web Analytics Integration
+
+To monitor visitor traffic, page views, and download success patterns in production without impacting performance or user privacy:
+1. **Zero-Config Web Analytics**: Installed the official `@vercel/analytics` package as a dependency in both the root application (`torrent`) and subdirectory (`fetch-by-the-atom`) projects.
+2. **React Root Layout Component**: Configured the `<Analytics />` component from `@vercel/analytics/next` directly in both root `app/layout.js` files. This automatically records page view and session flow data whenever visitors interact with the live apps.
+
 ---
 
 ## 🛠️ Maintenance & Deployment Commands
