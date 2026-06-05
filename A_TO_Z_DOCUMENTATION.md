@@ -204,6 +204,20 @@ We implemented several key optimizations that transformed the site from a basic 
     4.  **Continuous Garbage Collection**: Built a background worker inside the `JobQueue` module running every 10 minutes to scan and delete temp folders/files and prune in-memory rate-limiter maps/job states older than 30 minutes.
     5.  **Hard Duration Block**: Implemented checking in both the inspect and download routes that rejects any media exceeding 30 minutes (1,800 seconds) with a `400 Bad Request`.
 
+### Challenge 9: Instagram Photo/Carousel Download Block (Cookie Format Incompatibility)
+*   **The Problem**: Users trying to download Instagram photo or carousel posts received `We couldn't prepare that link` and `This Instagram link contains only photos/images` errors. `yt-dlp` does not support downloading non-video post formats and fails with `No video formats found!`. While we had designed an Instagram API fallback (`/api/v1/media/{mediaId}/info/`) that was supposed to fetch carousel data using base64 cookies, the fallback query returned 400 Bad Request or failed on the deployed backend while working on localhost.
+*   **The Conquering Path**: We identified that the cookies configured in the Hugging Face environment variables were in the tab-separated **Netscape cookie file** format, whereas the fallback code only supported parsing **JSON-formatted** cookies. We implemented a Netscape cookie parser directly inside `getCookiesArg` and merged it into the fallback headers. This enabled the server to correctly parse, authenticate, and query the Instagram API in production.
+
+### Challenge 10: Blank Image Previews (Server Proxy IP Blocking)
+*   **The Problem**: After fixing the API fallback, photo carousel posts successfully resolved, but the slide cards and preview images rendered as blank white boxes on the deployed site. The frontend was proxying images through the server (`/api/media/thumbnail?src=...`) to avoid hotlink blocks. However, because Hugging Face's container IP ranges are blocked by the Instagram CDN, the server-side proxy fetch request failed or timed out.
+*   **The Conquering Path**: Since browser client IPs are not blocked by the Instagram CDN, we bypassed the server proxy entirely for all Instagram images. We modified `FormatCard.js` and `LinkInspector.js` to render the CDN image source directly inside the browser `<img>` elements, appending `referrerPolicy="no-referrer"`. This strips the `Referer` header from the browser request, successfully bypassing Instagram's hotlink protection without sending the request through the server.
+
+### Challenge 11: 15-Second Link Inspection Latency (SSL Handshake Timeout & yt-dlp Overhead)
+*   **The Problem**: Inspecting Instagram links was extremely slow, taking upwards of 15 seconds to return formats. This was caused by two sequential delays: (1) `inspectMedia` first ran `yt-dlp` attempts which took 3–5 seconds to fail on photo links, and (2) the API fallback queried `www.instagram.com` which has a known SSL handshake timeout issue on Hugging Face (wasting 8 seconds before trying the next subdomain).
+*   **The Conquering Path**: We optimized the routing in two ways:
+    1. **Bypassed yt-dlp first check**: We added a fast check at the start of `inspectMedia` that catches Instagram URLs and immediately attempts the API fallback, skipping the slow `yt-dlp` process entirely.
+    2. **Endpoint Swapping**: We swapped the endpoints order in `fetchInstagramMediaInfo` so it queries the mobile-friendly `i.instagram.com` subdomain first. This avoids the 8-second SSL handshake timeout on `www.instagram.com`, dropping the total fetch time down to under 1.5 seconds.
+
 ---
 
 ## ✅ How it Works Perfectly Now
