@@ -218,6 +218,10 @@ We implemented several key optimizations that transformed the site from a basic 
     1. **Bypassed yt-dlp first check**: We added a fast check at the start of `inspectMedia` that catches Instagram URLs and immediately attempts the API fallback, skipping the slow `yt-dlp` process entirely.
     2. **Endpoint Swapping**: We swapped the endpoints order in `fetchInstagramMediaInfo` so it queries the mobile-friendly `i.instagram.com` subdomain first. This avoids the 8-second SSL handshake timeout on `www.instagram.com`, dropping the total fetch time down to under 1.5 seconds.
 
+### Challenge 12: Single Instagram Videos (Reels) Erroneously Rendering as Carousel Slides
+*   **The Problem**: After skipping the `yt-dlp` inspection step and prioritizing our custom Instagram API fallback, single video posts and Reels correctly resolved, but they rendered in the frontend as selectable carousel slides (complete with a "Carousel Slides" header, selection checkboxes, and 2-column formatting) instead of standard direct format download cards.
+*   **The Conquering Path**: We found that our API fallback parser assigned format IDs starting with the `photo:` prefix (e.g. `photo:video:direct`) for all Instagram fallback formats. The frontend uses `format.id.startsWith("photo:")` to identify selectable carousel slides. We modified the format builder inside `ytDlp.js` to use `instagram:video:direct` and `instagram:image:direct` for single-media formats. Because these no longer start with the `photo:` prefix, they correctly bypass the carousel renderer and render as standard video/image cards.
+
 ---
 
 ## ✅ How it Works Perfectly Now
